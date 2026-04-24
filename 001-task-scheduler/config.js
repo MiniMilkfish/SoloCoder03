@@ -4,5 +4,9 @@ module.exports = {
     dir: './logs',
     maxSize: '10m',
     maxFiles: '14d'
+  },
+  shutdown: {
+    timeout: 30000,
+    forceTimeout: 35000
   }
 };
