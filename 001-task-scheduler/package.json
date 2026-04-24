@@ -1,0 +1,24 @@
+{
+  "name": "task-scheduler",
+  "version": "1.0.0",
+  "description": "A task scheduler service based on Node.js + koa + node-schedule",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": [
+    "scheduler",
+    "koa",
+    "node-schedule",
+    "task"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "koa": "^2.14.2",
+    "koa-bodyparser": "^4.4.1",
+    "koa-router": "^12.0.0",
+    "node-schedule": "^2.1.1"
+  }
+}
