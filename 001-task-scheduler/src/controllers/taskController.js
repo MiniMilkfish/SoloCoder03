@@ -3,7 +3,7 @@ const logger = require('../utils/logger');
 
 class TaskController {
   async createTask(ctx) {
-    const { name, cron, callback, data } = ctx.request.body;
+    const { name, cron, callback, data, preventOverlap } = ctx.request.body;
     
     if (!name || !cron || !callback) {
       ctx.status = 400;
@@ -17,12 +17,18 @@ class TaskController {
     try {
       const fn = new Function('data', 'taskId', callback);
       
-      const task = await scheduler.createTask({
+      const taskOptions = {
         name,
         cron,
         callback: fn,
         data
-      });
+      };
+      
+      if (typeof preventOverlap === 'boolean') {
+        taskOptions.preventOverlap = preventOverlap;
+      }
+      
+      const task = await scheduler.createTask(taskOptions);
       
       ctx.status = 201;
       ctx.body = {

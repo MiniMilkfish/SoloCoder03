@@ -6,6 +6,8 @@ const logger = require('../utils/logger');
 class Scheduler {
   constructor() {
     this.jobs = new Map();
+    this.executingTasks = new Set();
+    this.missedExecutions = new Map();
   }
 
   async createTask(taskData) {
@@ -39,7 +41,32 @@ class Scheduler {
 
   async _executeTask(task) {
     const taskId = task.id;
-    logger.info(taskId, `Executing task: ${task.name}`);
+    
+    const missedCount = this.missedExecutions.get(taskId) || 0;
+    if (missedCount > 0) {
+      task.missedCount += missedCount;
+      this.missedExecutions.set(taskId, 0);
+    }
+    
+    if (task.preventOverlap && this.executingTasks.has(taskId)) {
+      const newMissedCount = (this.missedExecutions.get(taskId) || 0) + 1;
+      this.missedExecutions.set(taskId, newMissedCount);
+      
+      logger.warn(taskId, `Task execution skipped: ${task.name} - previous execution still running`, {
+        missedCount: newMissedCount,
+        currentTime: new Date().toISOString(),
+        preventOverlap: task.preventOverlap
+      });
+      return;
+    }
+    
+    this.executingTasks.add(taskId);
+    const startTime = Date.now();
+    
+    logger.info(taskId, `Executing task: ${task.name}`, {
+      preventOverlap: task.preventOverlap,
+      executionCount: task.executionCount + 1
+    });
     
     try {
       task.lastRunAt = new Date();
@@ -47,16 +74,30 @@ class Scheduler {
       
       const result = await task.callback(task.data, taskId);
       
+      const duration = Date.now() - startTime;
+      task.lastRunDuration = duration;
+      
       const job = this.jobs.get(taskId);
       if (job && job.nextInvocation()) {
         task.nextRunAt = job.nextInvocation().toISOString();
       }
       
-      logger.info(taskId, `Task executed successfully: ${task.name}`, { result });
+      logger.info(taskId, `Task executed successfully: ${task.name}`, {
+        duration,
+        result
+      });
     } catch (error) {
+      const duration = Date.now() - startTime;
+      task.lastRunDuration = duration;
       task.errorCount++;
       task.lastError = error.message;
-      logger.error(taskId, `Task execution failed: ${task.name}`, { error: error.message });
+      
+      logger.error(taskId, `Task execution failed: ${task.name}`, {
+        duration,
+        error: error.message
+      });
+    } finally {
+      this.executingTasks.delete(taskId);
     }
   }
 
@@ -151,6 +192,9 @@ class Scheduler {
       this.jobs.delete(id);
     }
     
+    this.executingTasks.delete(id);
+    this.missedExecutions.delete(id);
+    
     taskStore.delete(id);
     logger.info(id, `Task deleted: ${task.name}`);
     return true;
@@ -162,22 +206,39 @@ class Scheduler {
       return null;
     }
     
+    const pendingMissed = this.missedExecutions.get(id) || 0;
+    if (pendingMissed > 0) {
+      task.missedCount += pendingMissed;
+      this.missedExecutions.set(id, 0);
+    }
+    
     const job = this.jobs.get(id);
     if (job && job.nextInvocation()) {
       task.nextRunAt = job.nextInvocation().toISOString();
     }
     
-    return task.toJSON();
+    const taskData = task.toJSON();
+    taskData.isExecuting = this.executingTasks.has(id);
+    
+    return taskData;
   }
 
   getAllTasks() {
     const tasks = taskStore.getAll();
     
     tasks.forEach(task => {
+      const pendingMissed = this.missedExecutions.get(task.id) || 0;
+      if (pendingMissed > 0) {
+        task.missedCount += pendingMissed;
+        this.missedExecutions.set(task.id, 0);
+      }
+      
       const job = this.jobs.get(task.id);
       if (job && job.nextInvocation()) {
         task.nextRunAt = job.nextInvocation().toISOString();
       }
+      
+      task.isExecuting = this.executingTasks.has(task.id);
     });
     
     return tasks;
