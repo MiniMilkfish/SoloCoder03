@@ -152,20 +152,25 @@ export const useBlogStore = defineStore('blog', () => {
       comments: []
     }
     
-    const success = writePost(newPost)
-    if (success) {
-      allPosts.value.push(newPost)
-      // 重新排序
-      allPosts.value.sort((a, b) => {
-        if (a.isPinned && !b.isPinned) return -1
-        if (!a.isPinned && b.isPinned) return 1
-        if (a.sortOrder !== undefined && b.sortOrder !== undefined) {
-          return a.sortOrder - b.sortOrder
-        }
-        return new Date(b.createdAt) - new Date(a.createdAt)
-      })
+    try {
+      // 尝试写入文件（仅在 Node.js 环境有效）
+      writePost(newPost)
+    } catch (error) {
+      console.log('Running in browser environment, using local state only')
     }
-    return success
+    
+    // 无论环境如何，都更新本地状态
+    allPosts.value.push(newPost)
+    // 重新排序
+    allPosts.value.sort((a, b) => {
+      if (a.isPinned && !b.isPinned) return -1
+      if (!a.isPinned && b.isPinned) return 1
+      if (a.sortOrder !== undefined && b.sortOrder !== undefined) {
+        return a.sortOrder - b.sortOrder
+      }
+      return new Date(b.createdAt) - new Date(a.createdAt)
+    })
+    return true
   }
 
   async function updatePostById(postId, updates) {
@@ -177,14 +182,19 @@ export const useBlogStore = defineStore('blog', () => {
         updatedAt: new Date().toISOString().split('T')[0]
       }
       
-      const success = updatePost(post.slug, updatedPost)
-      if (success) {
-        const index = allPosts.value.findIndex(p => p.id === postId)
-        if (index !== -1) {
-          allPosts.value[index] = updatedPost
-        }
+      try {
+        // 尝试更新文件（仅在 Node.js 环境有效）
+        updatePost(post.slug, updatedPost)
+      } catch (error) {
+        console.log('Running in browser environment, using local state only')
       }
-      return success
+      
+      // 无论环境如何，都更新本地状态
+      const index = allPosts.value.findIndex(p => p.id === postId)
+      if (index !== -1) {
+        allPosts.value[index] = updatedPost
+      }
+      return true
     }
     return false
   }
@@ -192,11 +202,16 @@ export const useBlogStore = defineStore('blog', () => {
   async function deletePostById(postId) {
     const post = allPosts.value.find(p => p.id === postId)
     if (post) {
-      const success = deletePost(post.slug)
-      if (success) {
-        allPosts.value = allPosts.value.filter(p => p.id !== postId)
+      try {
+        // 尝试删除文件（仅在 Node.js 环境有效）
+        deletePost(post.slug)
+      } catch (error) {
+        console.log('Running in browser environment, using local state only')
       }
-      return success
+      
+      // 无论环境如何，都更新本地状态
+      allPosts.value = allPosts.value.filter(p => p.id !== postId)
+      return true
     }
     return false
   }

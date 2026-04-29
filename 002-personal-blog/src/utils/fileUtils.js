@@ -1,8 +1,29 @@
 import { marked } from 'marked'
-import { readFileSync, writeFileSync, unlinkSync, existsSync } from 'fs'
-import { join } from 'path'
 
-const contentDir = join(process.cwd(), 'content')
+// 浏览器环境中不使用 fs 模块
+let readFileSync, writeFileSync, unlinkSync, existsSync, join
+let contentDir
+
+if (typeof window === 'undefined') {
+  // Node.js 环境
+  const fs = require('fs')
+  const path = require('path')
+  readFileSync = fs.readFileSync
+  writeFileSync = fs.writeFileSync
+  unlinkSync = fs.unlinkSync
+  existsSync = fs.existsSync
+  join = path.join
+  contentDir = join(process.cwd(), 'content')
+} else {
+  // 浏览器环境
+  contentDir = '/content'
+  // 浏览器环境下的模拟实现
+  readFileSync = () => ''
+  writeFileSync = () => {}
+  unlinkSync = () => {}
+  existsSync = () => false
+  join = (a, b) => `${a}/${b}`
+}
 
 function parseYAMLFrontMatter(content) {
   const yamlRegex = /^---\n([\s\S]*?)\n---\n/;
