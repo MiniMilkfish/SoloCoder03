@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, onMounted } from 'vue'
 import { loadPosts } from '@/utils/postLoader'
+import { writePost, deletePost, updatePost } from '@/utils/fileUtils'
 import categories from '@/data/categories'
 import tags from '@/data/tags'
 
@@ -140,6 +141,78 @@ export const useBlogStore = defineStore('blog', () => {
     }
   }
 
+  async function addPost(postData) {
+    const newPost = {
+      ...postData,
+      id: Date.now(),
+      views: 0,
+      likes: 0,
+      createdAt: new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString().split('T')[0],
+      comments: []
+    }
+    
+    const success = writePost(newPost)
+    if (success) {
+      allPosts.value.push(newPost)
+      // 重新排序
+      allPosts.value.sort((a, b) => {
+        if (a.isPinned && !b.isPinned) return -1
+        if (!a.isPinned && b.isPinned) return 1
+        if (a.sortOrder !== undefined && b.sortOrder !== undefined) {
+          return a.sortOrder - b.sortOrder
+        }
+        return new Date(b.createdAt) - new Date(a.createdAt)
+      })
+    }
+    return success
+  }
+
+  async function updatePostById(postId, updates) {
+    const post = allPosts.value.find(p => p.id === postId)
+    if (post) {
+      const updatedPost = {
+        ...post,
+        ...updates,
+        updatedAt: new Date().toISOString().split('T')[0]
+      }
+      
+      const success = updatePost(post.slug, updatedPost)
+      if (success) {
+        const index = allPosts.value.findIndex(p => p.id === postId)
+        if (index !== -1) {
+          allPosts.value[index] = updatedPost
+        }
+      }
+      return success
+    }
+    return false
+  }
+
+  async function deletePostById(postId) {
+    const post = allPosts.value.find(p => p.id === postId)
+    if (post) {
+      const success = deletePost(post.slug)
+      if (success) {
+        allPosts.value = allPosts.value.filter(p => p.id !== postId)
+      }
+      return success
+    }
+    return false
+  }
+
+  async function refreshPosts() {
+    isLoading.value = true
+    try {
+      const loadedPosts = await loadPosts()
+      allPosts.value = loadedPosts
+    } catch (error) {
+      console.error('Error refreshing posts:', error)
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   return {
     allPosts,
     allCategories,
@@ -166,6 +239,10 @@ export const useBlogStore = defineStore('blog', () => {
     setPage,
     incrementViews,
     toggleLike,
-    addComment
+    addComment,
+    addPost,
+    updatePostById,
+    deletePostById,
+    refreshPosts
   }
 })

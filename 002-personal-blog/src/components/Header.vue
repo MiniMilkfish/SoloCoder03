@@ -64,6 +64,7 @@ const navItems = computed(() => [
   { path: '/', label: '首页', icon: '🏠' },
   { path: '/category/frontend', label: '分类', icon: '📂' },
   { path: '/tag/javascript', label: '标签', icon: '🏷️' },
+  { path: '/admin', label: '管理', icon: '⚙️' },
   { path: '/about', label: '关于', icon: '👤' }
 ])
 

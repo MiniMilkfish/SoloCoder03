@@ -95,18 +95,32 @@ export async function loadPosts() {
       const content = await loadFile();
       const { metadata, content: markdownContent } = parseYAMLFrontMatter(content);
       
-      // 解析评论
-      if (metadata.comments && typeof metadata.comments === 'string') {
-        metadata.comments = parseComments(metadata.comments);
+      // 确保 comments 是数组
+      if (metadata.comments && !Array.isArray(metadata.comments)) {
+        try {
+          metadata.comments = JSON.parse(metadata.comments);
+          if (!Array.isArray(metadata.comments)) {
+            metadata.comments = [];
+          }
+        } catch {
+          metadata.comments = [];
+        }
+      } else if (!metadata.comments) {
+        metadata.comments = [];
       }
       
-      // 解析标签ID
-      if (metadata.tagIds && typeof metadata.tagIds === 'string') {
+      // 确保 tagIds 是数组
+      if (metadata.tagIds && !Array.isArray(metadata.tagIds)) {
         try {
           metadata.tagIds = JSON.parse(metadata.tagIds);
+          if (!Array.isArray(metadata.tagIds)) {
+            metadata.tagIds = [];
+          }
         } catch {
           metadata.tagIds = [];
         }
+      } else if (!metadata.tagIds) {
+        metadata.tagIds = [];
       }
       
       posts.push({
