@@ -1,6 +1,7 @@
 import { renderMarkdown } from './markdown'
 
 const markdownFiles = import.meta.glob('../content/*.md', { as: 'raw' })
+console.log('Markdown files found:', Object.keys(markdownFiles))
 
 function parseYAMLFrontMatter(content) {
   const yamlRegex = /^---\n([\s\S]*?)\n---\n/;

@@ -31,6 +31,7 @@ const { isDark, isLoading } = { ...blogStore }
 
 onMounted(() => {
   blogStore.initTheme()
+  blogStore.loadAllPosts()
 })
 </script>
 

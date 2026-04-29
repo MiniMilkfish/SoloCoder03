@@ -32,7 +32,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useBlogStore } from '@/store/blog'
 import PostCard from '@/components/PostCard.vue'
 import Pagination from '@/components/Pagination.vue'
@@ -44,6 +44,13 @@ const pinnedPosts = computed(() => blogStore.pinnedPosts)
 const paginatedPosts = computed(() => blogStore.paginatedPosts)
 const totalPages = computed(() => blogStore.totalPages)
 const currentPage = computed(() => blogStore.currentPage)
+
+onMounted(() => {
+  console.log('All posts:', blogStore.allPosts)
+  console.log('Published posts:', blogStore.publishedPosts)
+  console.log('Pinned posts:', blogStore.pinnedPosts)
+  console.log('Paginated posts:', blogStore.paginatedPosts)
+})
 
 function handlePageChange(page) {
   blogStore.setPage(page)

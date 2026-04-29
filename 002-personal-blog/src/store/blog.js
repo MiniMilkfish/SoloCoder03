@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 import { loadPosts } from '@/utils/postLoader'
 import { writePost, deletePost, updatePost } from '@/utils/fileUtils'
 import categories from '@/data/categories'
@@ -14,17 +14,19 @@ export const useBlogStore = defineStore('blog', () => {
   const currentPage = ref(1)
   const pageSize = ref(5)
   
-  onMounted(async () => {
+  async function loadAllPosts() {
     isLoading.value = true
     try {
+      console.log('Loading posts...')
       const loadedPosts = await loadPosts()
+      console.log('Posts loaded:', loadedPosts.length)
       allPosts.value = loadedPosts
     } catch (error) {
       console.error('Error loading posts:', error)
     } finally {
       isLoading.value = false
     }
-  })
+  }
 
   const publishedPosts = computed(() => {
     return allPosts.value.filter(post => !post.isDraft)
@@ -258,6 +260,7 @@ export const useBlogStore = defineStore('blog', () => {
     addPost,
     updatePostById,
     deletePostById,
-    refreshPosts
+    refreshPosts,
+    loadAllPosts
   }
 })

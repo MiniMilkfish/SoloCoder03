@@ -1,5 +1,3 @@
-import axios from 'axios'
-
 // 使用 TinyPNG API 压缩图片
 export async function compressImage(imageUrl) {
   try {
@@ -7,18 +5,19 @@ export async function compressImage(imageUrl) {
     // 注意：实际使用时需要替换为真实的 API key
     const apiKey = 'YOUR_TINYPNG_API_KEY'
     
-    const response = await axios.post(
-      'https://api.tinify.com/shrink',
-      { source: { url: imageUrl } },
-      {
-        headers: {
-          'Authorization': `Basic ${btoa(`api:${apiKey}`)}`
-        }
-      }
-    )
+    const response = await fetch('https://api.tinify.com/shrink', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`api:${apiKey}`)}`
+      },
+      body: JSON.stringify({ source: { url: imageUrl } })
+    })
     
-    if (response.data.output && response.data.output.url) {
-      return response.data.output.url
+    if (response.ok) {
+      const data = await response.json()
+      if (data.output && data.output.url) {
+        return data.output.url
+      }
     }
     return imageUrl
   } catch (error) {
