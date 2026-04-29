@@ -1,5 +1,5 @@
 export default [
-  { id: 1, name: 'JavaScript', slug: 'javascript', count: 8 },
+  { id: 1, name: 'JavaScript', slug: 'javascript', count: 6 },
   { id: 2, name: 'Vue', slug: 'vue', count: 6 },
   { id: 3, name: 'React', slug: 'react', count: 3 },
   { id: 4, name: 'TypeScript', slug: 'typescript', count: 4 },

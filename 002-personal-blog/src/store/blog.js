@@ -1,17 +1,29 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import posts from '@/data/posts'
+import { ref, computed, onMounted } from 'vue'
+import { loadPosts } from '@/utils/postLoader'
 import categories from '@/data/categories'
 import tags from '@/data/tags'
 
 export const useBlogStore = defineStore('blog', () => {
-  const allPosts = ref([...posts])
+  const allPosts = ref([])
   const allCategories = ref([...categories])
   const allTags = ref([...tags])
   const isDark = ref(localStorage.getItem('theme') === 'dark')
   const isLoading = ref(false)
   const currentPage = ref(1)
   const pageSize = ref(5)
+  
+  onMounted(async () => {
+    isLoading.value = true
+    try {
+      const loadedPosts = await loadPosts()
+      allPosts.value = loadedPosts
+    } catch (error) {
+      console.error('Error loading posts:', error)
+    } finally {
+      isLoading.value = false
+    }
+  })
 
   const publishedPosts = computed(() => {
     return allPosts.value.filter(post => !post.isDraft)
